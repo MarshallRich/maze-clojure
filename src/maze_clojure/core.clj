@@ -3,12 +3,14 @@
 
 (def size 10)
 
+(def finished? false)
+
 (defn create-rooms []
   (vec
     (for [row (range size)]
       (vec
         (for [col (range size)]
-          {:row row :col col :visited? false :bottom? true :right? true})))))
+          {:row row :col col :visited? false :bottom? true :right? true :start? false :end? false})))))
 
 (defn possible-neighbors [rooms row col]
   (vec  
@@ -49,12 +51,17 @@
         (loop [old-rooms (tear-down-wall rooms row col (:row next-room) (:col next-room))]
           (let [new-rooms (create-maze old-rooms (:row next-room) (:col next-room))]
             (if (= old-rooms new-rooms)
-              old-rooms
+              (if-not finished?
+                (do 
+                  (def finished? true)
+                  (assoc-in rooms [(:row next-room) (:col next-room) :end?] true))
+                old-rooms)
               (recur new-rooms)))))
       rooms)))
 
 (defn -main []
   (let [rooms (create-rooms)
+        rooms (assoc-in rooms [0 0 :start?] true) 
         rooms (create-maze rooms 0 0)]
     ;print top walls
     (doseq [_ rooms]
@@ -65,9 +72,11 @@
     (doseq [row rooms]
       (print "|")
       (doseq [room row]
-        (if (:bottom? room)
-          (print "_")
-          (print " "))
+        (cond 
+          (:start? room) (print "o")
+          (:end? room) (print "x")
+          (:bottom? room) (print "_")
+          :else (print " "))   
         (if (:right? room)
           (print "|")
           (print " ")))
